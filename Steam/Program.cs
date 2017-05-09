@@ -33,7 +33,8 @@ namespace Steam
         static List<Game> Load()
         {
             List<Game> games = new List<Game>();
-            using (StreamReader sr = new StreamReader(fileName))
+            using (FileStream fs = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (StreamReader sr = new StreamReader(fs))
             {
                 sr.ReadLine();
                 while (!sr.EndOfStream)
@@ -59,18 +60,25 @@ namespace Steam
 
         static void Save(List<Game> games)
         {
-            using (StreamWriter sw = new StreamWriter(fileName))
+            try
             {
-                sw.WriteLine(Game.CsvHeader);
-                games.ForEach(g => sw.WriteLine(g.ToString()));
+                using (StreamWriter sw = new StreamWriter(fileName))
+                {
+                    sw.WriteLine(Game.CsvHeader);
+                    games.ForEach(g => sw.WriteLine(g.ToString()));
+                }
+                Console.WriteLine("Saved to {0}.\r\n", fileName);
             }
-            Console.WriteLine("Saved to {0}", fileName);
+            catch
+            {
+                Console.Write("Could not save to {0}{1}\r\n", Environment.CurrentDirectory, fileName);
+            }
         }
 
         static void PrintPerfectGames(List<Game> games)
         {
             var perfect = games.Where(g => g.Playtime > 0 && g.AchievCount > 0 && g.AchievDone == g.AchievCount).ToList();
-            Console.WriteLine("{0} perfect games: ", perfect.Count);
+            Console.WriteLine("{0} perfect games", perfect.Count);
             perfect.ForEach(g => Console.WriteLine(g.Name));
         }
 
@@ -88,7 +96,7 @@ namespace Steam
                     games = Load();
                 else
                 {
-                    Console.Write("SteamId: ");
+                    Console.Write("Steam name/id: ");
                     string id = Console.ReadLine();
                     if (string.IsNullOrEmpty(id))
                         id = UserData.SteamId;
@@ -107,7 +115,6 @@ namespace Steam
             finally
             {
                 Console.ReadKey(true);
-                Environment.Exit(0);
             }
         }
     }
