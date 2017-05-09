@@ -40,6 +40,11 @@
   <ItemGroup>
     <Compile Include="ApiRequest.cs" />
     <Compile Include="Game.cs" />
+    <Compile Include="Model\AppDetails.cs" />
+    <Compile Include="Model\AppDetailsMetacritic.cs" />
+    <Compile Include="Model\AppDetailsPrice.cs" />
+    <Compile Include="Model\AppDetailsRecommendations.cs" />
+    <Compile Include="Model\AppDetailsRelease.cs" />
     <Compile Include="Model\OwnedGames.cs" />
     <Compile Include="Model\OwnedGamesGame.cs" />
     <Compile Include="Model\OwnedGamesResponse.cs" />

@@ -27,6 +27,15 @@ namespace Steam
                 var stats = ApiRequest.GetPlayerAchievements(steamId, g.Id).playerstats;
                 if (stats.success && stats.achievements != null && stats.achievements.Length > 0)
                     g.SetAchiev(stats.achievements.Length, stats.achievements.Count(a => a.achieved > 0));
+
+                var details = ApiRequest.GetAppDetails(g.Id);
+                if (details != null)
+                    g.SetDetails(
+                        details.type,
+                        details.price_overview == null ? 0 : details.price_overview.initial,
+                        details.metacritic == null ? 0 : details.metacritic.score,
+                        details.recommendations == null ? 0 : details.recommendations.total,
+                        details.release_date == null ? DateTime.Now.ToShortDateString() : details.release_date.date);
             });
             Console.WriteLine("\rDone.\r\n");
 
@@ -46,13 +55,14 @@ namespace Steam
                     int l = vals.Length;
 
                     string name = vals[1];
-                    if (l > 7)
-                        for (int i = 2; i < l - 5; i++)
+                    if (l > 12)
+                        for (int i = 2; i < l - 10; i++)
                             name += ", " + vals[i];
                     name = name.Trim('"');
 
                     var g = new Game(int.Parse(vals[0]), name, int.Parse(vals[l - 5]), vals[l - 2], vals[l - 1]);
                     g.SetAchiev(int.Parse(vals[l - 4]), int.Parse(vals[l - 3]));
+                    g.SetDetails(vals[l - 10], int.Parse(vals[l - 9]), int.Parse(vals[l - 8]), int.Parse(vals[l - 7]), vals[l - 6]);
 
                     games.Add(g);
                 }
