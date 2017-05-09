@@ -31,22 +31,19 @@ namespace Steam
             }
         }
 
-        static VanityUrl ResolveVanityUrl(string url)
-        {
-            return Execute<VanityUrl>(string.Format(ResolveVanityUrlFormat, UserData.Key, url));
-        }
-
-        internal static OwnedGames GetOwnedGames(string id)
+        internal static string ResolveVanityUrl(string id)
         {
             if (id.All(char.IsDigit))
-                return Execute<OwnedGames>(string.Format(GetOwnedGamesFormat, UserData.Key, id));
-            else
-            {
-                var vanity = ResolveVanityUrl(id);
-                if (vanity.response.success == 1)
-                    return Execute<OwnedGames>(string.Format(GetOwnedGamesFormat, UserData.Key, vanity.response.steamid));
-                throw new ApplicationException("Unknown user " + id);
-            }
+                return id;
+            var vanity = Execute<VanityUrl>(string.Format(ResolveVanityUrlFormat, UserData.Key, id));
+            if (vanity.response.success == 1)
+                return vanity.response.steamid;
+            throw new ApplicationException("Unknown user " + id);
+        }
+
+        internal static OwnedGames GetOwnedGames(string steamId)
+        {
+            return Execute<OwnedGames>(string.Format(GetOwnedGamesFormat, UserData.Key, steamId));
         }
 
         internal static PlayerAchievements GetPlayerAchievements(string steamId, int appId)

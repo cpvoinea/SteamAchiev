@@ -100,9 +100,11 @@ namespace Steam
                 else
                 {
                     Console.Write("Steam name/id: ");
-                    string id = Console.ReadLine();
+                    string id = Console.ReadLine().Trim();
                     if (string.IsNullOrEmpty(id))
                         id = UserData.SteamId;
+                    else
+                        id = ApiRequest.ResolveVanityUrl(id);
 
                     games = ReadFromApi(id);
                     Save(games);
