@@ -17,6 +17,9 @@ namespace Steam
 
             OwnedGamesResponse response = ApiRequest.GetOwnedGames(steamId).response;
             int count = response.game_count;
+            if (count == 0)
+                return new List<Game>();
+
             var games = response.games.Select(g => new Game(g.appid, g.name, g.playtime_forever, g.img_icon_url, g.img_logo_url)).ToList();
             games.ForEach(g =>
             {
