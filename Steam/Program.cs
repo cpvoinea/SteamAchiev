@@ -3,46 +3,90 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace Steam
 {
-    partial class Program
+    static class Program
     {
-        const string fileName = "games.csv";
+        const int MaxReqCount = 50;
+        const int MinInterval = 60000;
 
-        static List<Game> ReadFromApi(string steamId)
+        static List<Game> UpdateGames(List<Game> games, string fileName, string steamId)
         {
-            int progress = 0;
-            Console.WriteLine("Reading stats...");
-
-            OwnedGamesResponse response = ApiRequest.GetOwnedGames(steamId).response;
-            int count = response.game_count;
-            if (count == 0)
-                return new List<Game>();
-
-            var games = response.games.Select(g => new Game(g.appid, g.name, g.playtime_forever, g.img_icon_url, g.img_logo_url)).ToList();
-            games.ForEach(g =>
+            using (StreamWriter sw = new StreamWriter(fileName))
             {
-                Console.Write("\r{0}%  ", progress++ * 100 / count);
-                var stats = ApiRequest.GetPlayerAchievements(steamId, g.Id).playerstats;
-                if (stats.success && stats.achievements != null && stats.achievements.Length > 0)
-                    g.SetAchiev(stats.achievements.Length, stats.achievements.Count(a => a.achieved > 0));
+                sw.AutoFlush = true;
+                sw.WriteLine(Game.CsvHeader);
 
-                var details = ApiRequest.GetAppDetails(g.Id);
-                if (details != null)
-                    g.SetDetails(
-                        details.type,
-                        details.price_overview == null ? 0 : details.price_overview.initial,
-                        details.metacritic == null ? 0 : details.metacritic.score,
-                        details.recommendations == null ? 0 : details.recommendations.total,
-                        details.release_date == null ? DateTime.Now.ToShortDateString() : details.release_date.date);
-            });
-            Console.WriteLine("\rDone.\r\n");
+                int count = games.Count;
+                int progress = 0;
+                int detailsCount = 0;
+                DateTime start = DateTime.Now;
+                foreach (var g in games)
+                {
+                    Console.Write("\r{0}%  ", progress++ * 100 / count);
 
+                    if (!g.AchievCount.HasValue)
+                    {
+                        var stats = ApiRequest.GetPlayerAchievements(steamId, g.Id).playerstats;
+                        if (stats.success && stats.achievements != null && stats.achievements.Length > 0)
+                            g.SetAchiev(stats.achievements.Length, stats.achievements.Count(a => a.achieved > 0));
+                        else
+                            g.SetAchiev(0, 0);
+                    }
+
+                    if (string.IsNullOrEmpty(g.Type))
+                    {
+                        var details = ApiRequest.GetAppDetails(g.Id);
+                        if (details != null)
+                        {
+                            string year = details.release_date?.date;
+                            int i = year.LastIndexOf(',');
+                            if (i > 0)
+                                year = year.Substring(i + 1).Trim();
+
+                            g.SetDetails(details.type, details.price_overview?.initial, details.metacritic?.score, details.recommendations?.total, year);
+                        }
+
+                        if (++detailsCount % MaxReqCount == 0)
+                        {
+                            DateTime now = DateTime.Now;
+                            int interval = (int)now.Subtract(start).TotalMilliseconds;
+                            if (interval < MinInterval)
+                                Thread.Sleep(MinInterval - interval);
+                            start = now;
+                        }
+                    }
+
+                    sw.WriteLine(g.ToString());
+                }
+            }
+
+            Console.WriteLine("\rSaved to {0}.", fileName);
             return games;
         }
 
-        static List<Game> Load()
+        static List<Game> ReadFromApi(string steamId)
+        {
+            OwnedGamesResponse response = ApiRequest.GetOwnedGames(steamId).response;
+            if (response == null || response.game_count == 0)
+                return new List<Game>();
+
+            return response.games.Select(g => new Game(g.appid, g.name, g.playtime_forever, g.img_icon_url, g.img_logo_url)).ToList();
+        }
+
+        static int? ToInt(this string s)
+        {
+            if (string.IsNullOrWhiteSpace(s))
+                return null;
+
+            int i = 0;
+            int.TryParse(s, out i);
+            return i;
+        }
+
+        static List<Game> ReadFromFile(string fileName)
         {
             List<Game> games = new List<Game>();
             using (FileStream fs = File.Open(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -60,9 +104,9 @@ namespace Steam
                             name += ", " + vals[i];
                     name = name.Trim('"');
 
-                    var g = new Game(int.Parse(vals[0]), name, int.Parse(vals[l - 5]), vals[l - 2], vals[l - 1]);
-                    g.SetAchiev(int.Parse(vals[l - 4]), int.Parse(vals[l - 3]));
-                    g.SetDetails(vals[l - 10], int.Parse(vals[l - 9]), int.Parse(vals[l - 8]), int.Parse(vals[l - 7]), vals[l - 6]);
+                    var g = new Game(vals[0].ToInt().Value, name, vals[l - 5].ToInt().Value, vals[l - 2], vals[l - 1]);
+                    g.SetAchiev(vals[l - 4].ToInt(), vals[l - 3].ToInt());
+                    g.SetDetails(vals[l - 10], vals[l - 9].ToInt(), vals[l - 8].ToInt(), vals[l - 7].ToInt(), vals[l - 6]);
 
                     games.Add(g);
                 }
@@ -71,61 +115,33 @@ namespace Steam
             return games;
         }
 
-        static void Save(List<Game> games)
-        {
-            try
-            {
-                using (StreamWriter sw = new StreamWriter(fileName))
-                {
-                    sw.WriteLine(Game.CsvHeader);
-                    games.ForEach(g => sw.WriteLine(g.ToString()));
-                }
-                Console.WriteLine("Saved to {0}.\r\n", fileName);
-            }
-            catch
-            {
-                Console.Write("Could not save to {0}{1}\r\n", Environment.CurrentDirectory, fileName);
-            }
-        }
-
-        static void PrintPerfectGames(List<Game> games)
-        {
-            var perfect = games.Where(g => g.Playtime > 0 && g.AchievCount > 0 && g.AchievDone == g.AchievCount).ToList();
-            Console.WriteLine("{0} perfect games", perfect.Count);
-            perfect.ForEach(g => Console.WriteLine(g.Name));
-        }
-
         static void Main(string[] args)
         {
             try
             {
-                int option = 1;
-                //Console.Write("Option (1=Print perfect games): ");
-                //int.TryParse(Console.ReadKey().KeyChar.ToString(), out option);
-                //Console.WriteLine();
+                Console.Write("Steam name/id: ");
+                string name = Console.ReadLine().Trim();
+                string fileName = string.Format("{0}.csv", name);
+                string id = ApiRequest.ResolveVanityUrl(name);
 
-                List<Game> games;
+                List<Game> games = ReadFromApi(id);
                 if (File.Exists(fileName))
-                    games = Load();
-                else
                 {
-                    Console.Write("Steam name/id: ");
-                    string id = Console.ReadLine().Trim();
-                    if (string.IsNullOrEmpty(id))
-                        id = UserData.SteamId;
-                    else
-                        id = ApiRequest.ResolveVanityUrl(id);
-
-                    games = ReadFromApi(id);
-                    Save(games);
+                    Console.Write("{0} already exists. Overwrite? (y/n) ", fileName);
+                    if (Console.ReadKey(false).Key != ConsoleKey.Y)
+                        foreach (var g in ReadFromFile(fileName))
+                        {
+                            games.RemoveAll(x => x.Id == g.Id);
+                            games.Add(g);
+                        }
+                    Console.WriteLine();
                 }
 
-                if (option == 1)
-                    PrintPerfectGames(games);
+                games = UpdateGames(games, fileName, id);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Console.WriteLine(ex.Message);
             }
             finally
             {

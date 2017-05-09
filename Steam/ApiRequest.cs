@@ -1,5 +1,6 @@
 ﻿using Steam.Model;
 using System;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -15,6 +16,7 @@ namespace Steam
         const string AppDetailsFormat = "http://store.steampowered.com/api/appdetails?appids={0}&cc=ro";
 
         static JavaScriptSerializer serializer = new JavaScriptSerializer();
+        static string SteamKey { get { return ConfigurationManager.AppSettings["SteamKey"]; } }
 
         static string Execute(string request)
         {
@@ -36,7 +38,7 @@ namespace Steam
         {
             if (id.All(char.IsDigit))
                 return id;
-            var vanity = serializer.Deserialize<VanityUrl>(Execute(string.Format(ResolveVanityUrlFormat, UserData.Key, id)));
+            var vanity = serializer.Deserialize<VanityUrl>(Execute(string.Format(ResolveVanityUrlFormat, SteamKey, id)));
             if (vanity.response.success == 1)
                 return vanity.response.steamid;
             throw new ApplicationException("Unknown user " + id);
@@ -44,12 +46,12 @@ namespace Steam
 
         internal static OwnedGames GetOwnedGames(string steamId)
         {
-            return serializer.Deserialize<OwnedGames>(Execute(string.Format(GetOwnedGamesFormat, UserData.Key, steamId)));
+            return serializer.Deserialize<OwnedGames>(Execute(string.Format(GetOwnedGamesFormat, SteamKey, steamId)));
         }
 
         internal static PlayerAchievements GetPlayerAchievements(string steamId, int appId)
         {
-            return serializer.Deserialize<PlayerAchievements>(Execute(string.Format(GetPlayerAchievementsFormat, UserData.Key, steamId, appId)));
+            return serializer.Deserialize<PlayerAchievements>(Execute(string.Format(GetPlayerAchievementsFormat, SteamKey, steamId, appId)));
         }
 
         internal static AppDetails GetAppDetails(int appId)

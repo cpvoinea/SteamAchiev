@@ -3,7 +3,6 @@
     class AppDetails
     {
         public string type { get; set; }
-        public bool is_free { get; set; }
         public AppDetailsPrice price_overview { get; set; }
         public AppDetailsMetacritic metacritic { get; set; }
         public AppDetailsRecommendations recommendations { get; set; }
