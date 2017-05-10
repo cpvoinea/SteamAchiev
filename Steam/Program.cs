@@ -112,6 +112,35 @@ namespace Steam
             return games;
         }
 
+        static void PrintAchiementsPercent(List<Game> games)
+        {
+            int achievements = 0;
+            double percent0 = 0, percent1 = 0, percent2 = 0, percent3 = 0, percentn = 0;
+            int count = 0;
+            foreach (var g in games.Where(x => x.AchievDone > 0))
+            {
+                achievements += g.AchievDone.Value;
+                double percent = g.AchievDone.Value * 100.0 / g.AchievCount.Value;
+                percent0 += Math.Round(percent, 0);
+                percent1 += Math.Round(percent, 1);
+                percent2 += Math.Round(percent, 2);
+                percent3 += Math.Round(percent, 3);
+                percentn += percent;
+                count++;
+            }
+            percent0 = percent0 / count;
+            percent1 = percent1 / count;
+            percent2 = percent2 / count;
+            percent3 = percent3 / count;
+            percentn = percentn / count;
+
+            Console.WriteLine("{0} achievements for {1} games, average % {2}", achievements, count, percentn);
+            Console.WriteLine("Average % when rounded to 0 digits: {0}", percent0);
+            Console.WriteLine("Average % when rounded to 1 digits: {0}", percent1);
+            Console.WriteLine("Average % when rounded to 2 digits: {0}", percent2);
+            Console.WriteLine("Average % when rounded to 3 digits: {0}", percent3);
+        }
+
         static void Main(string[] args)
         {
             try
@@ -135,6 +164,8 @@ namespace Steam
                 }
 
                 games = UpdateGames(games, fileName, id);
+
+                PrintAchiementsPercent(games);
             }
             catch (Exception ex)
             {
