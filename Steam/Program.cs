@@ -1,6 +1,7 @@
 ﻿using Steam.Model;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -9,9 +10,6 @@ namespace Steam
 {
     static class Program
     {
-        const int MaxReqCount = 50;
-        const int MinInterval = 60000;
-
         static List<Game> UpdateGames(List<Game> games, string fileName, string steamId)
         {
             using (StreamWriter sw = new StreamWriter(fileName))
@@ -22,6 +20,7 @@ namespace Steam
                 int count = games.Count;
                 int progress = 0;
                 int detailsCount = 0;
+                int gamesPerMinute = int.Parse(ConfigurationManager.AppSettings["GamesPerMinute"]);
                 DateTime start = DateTime.Now;
                 foreach (var g in games)
                 {
@@ -49,12 +48,12 @@ namespace Steam
                             g.SetDetails(details.type, details.price_overview?.initial, details.metacritic?.score, details.recommendations?.total, year);
                         }
 
-                        if (++detailsCount % MaxReqCount == 0)
+                        if (++detailsCount % gamesPerMinute == 0)
                         {
                             DateTime now = DateTime.Now;
                             int interval = (int)now.Subtract(start).TotalMilliseconds;
-                            if (interval < MinInterval)
-                                Thread.Sleep(MinInterval - interval);
+                            if (interval < 60000)
+                                Thread.Sleep(60000 - interval);
                             start = now;
                         }
                     }
@@ -95,13 +94,11 @@ namespace Steam
                 sr.ReadLine();
                 while (!sr.EndOfStream)
                 {
-                    string[] vals = sr.ReadLine().Split(',');
+                    string[] vals = sr.ReadLine().Split(ConfigurationManager.AppSettings["CsvSeparator"].ToCharArray()[0]);
                     int l = vals.Length;
-
                     string name = vals[1];
-                    if (l > 12)
-                        for (int i = 2; i < l - 10; i++)
-                            name += ", " + vals[i];
+                    for (int i = 2; i < l - Game.CsvHeaderLength + 2; i++)
+                        name += ", " + vals[i];
                     name = name.Trim('"');
 
                     var g = new Game(vals[0].ToInt().Value, name, vals[l - 5].ToInt().Value, vals[l - 2], vals[l - 1]);

@@ -1,4 +1,6 @@
-﻿namespace Steam
+﻿using System.Configuration;
+
+namespace Steam
 {
     class Game
     {
@@ -41,10 +43,11 @@
 
         public override string ToString()
         {
-            return string.Format("{0},\"{1}\",{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}",
-                Id, Name, Type, Price, Metacritic, Recommendations, Year, Playtime, AchievCount, AchievDone, Icon, Logo);
+            return string.Join(ConfigurationManager.AppSettings["CsvSeparator"], new object[] { Id, Name, Type, Price, Metacritic, Recommendations, Year, Playtime, AchievCount, AchievDone, Icon, Logo });
         }
 
-        internal static string CsvHeader { get { return "Id, Name, Type, Price, Metacritic, Recommendations, Year, Playtime, AchievCount, AchievDone, Icon, Logo"; } }
+        static readonly string[] CsvHeaderValues = { "Id", "Name", "Type", "Price", "Metacritic", "Recommendations", "Year", "Playtime", "AchievCount", "AchievDone", "Icon", "Logo" };
+        internal static string CsvHeader { get { return string.Join(ConfigurationManager.AppSettings["CsvSeparator"], CsvHeaderValues); } }
+        internal static int CsvHeaderLength { get { return CsvHeaderValues.Length; } }
     }
 }
