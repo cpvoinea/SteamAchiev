@@ -10,6 +10,44 @@ namespace Steam
 {
     static class Program
     {
+        const int gamesPerMinute = 90;
+
+        static void Main(string[] args)
+        {
+            try
+            {
+                Console.Write("Steam name/id: ");
+                string name = Console.ReadLine().Trim();
+                string fileName = string.Format("{0}.csv", name);
+                string id = ApiRequest.ResolveVanityUrl(name);
+
+                List<Game> games = ReadFromApi(id);
+                if (File.Exists(fileName))
+                {
+                    Console.Write("{0} already exists. Overwrite? (y/n) ", fileName);
+                    if (Console.ReadKey(false).Key != ConsoleKey.Y)
+                        foreach (var g in ReadFromFile(fileName))
+                        {
+                            games.RemoveAll(x => x.Id == g.Id);
+                            games.Add(g);
+                        }
+                    Console.WriteLine();
+                }
+
+                games = UpdateGames(games, fileName, id);
+
+                PrintAchiementsPercent(games);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            finally
+            {
+                Console.ReadKey(true);
+            }
+        }
+
         static List<Game> UpdateGames(List<Game> games, string fileName, string steamId)
         {
             using (StreamWriter sw = new StreamWriter(fileName))
@@ -20,7 +58,6 @@ namespace Steam
                 int count = games.Count;
                 int progress = 0;
                 int detailsCount = 0;
-                int gamesPerMinute = int.Parse(ConfigurationManager.AppSettings["GamesPerMinute"]);
                 DateTime start = DateTime.Now;
                 foreach (var g in games)
                 {
@@ -94,7 +131,7 @@ namespace Steam
                 sr.ReadLine();
                 while (!sr.EndOfStream)
                 {
-                    string[] vals = sr.ReadLine().Split(ConfigurationManager.AppSettings["CsvSeparator"].ToCharArray()[0]);
+                    string[] vals = sr.ReadLine().Split(',');
                     int l = vals.Length;
                     string name = vals[1];
                     for (int i = 2; i < l - Game.CsvHeaderLength + 2; i++)
@@ -139,42 +176,6 @@ namespace Steam
             Console.WriteLine("Average % when rounded to 1 digits: {0}", percent1);
             Console.WriteLine("Average % when rounded to 2 digits: {0}", percent2);
             Console.WriteLine("Average % when rounded to 3 digits: {0}", percent3);
-        }
-
-        static void Main(string[] args)
-        {
-            try
-            {
-                Console.Write("Steam name/id: ");
-                string name = Console.ReadLine().Trim();
-                string fileName = string.Format("{0}.csv", name);
-                string id = ApiRequest.ResolveVanityUrl(name);
-
-                List<Game> games = ReadFromApi(id);
-                if (File.Exists(fileName))
-                {
-                    Console.Write("{0} already exists. Overwrite? (y/n) ", fileName);
-                    if (Console.ReadKey(false).Key != ConsoleKey.Y)
-                        foreach (var g in ReadFromFile(fileName))
-                        {
-                            games.RemoveAll(x => x.Id == g.Id);
-                            games.Add(g);
-                        }
-                    Console.WriteLine();
-                }
-
-                games = UpdateGames(games, fileName, id);
-
-                PrintAchiementsPercent(games);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-            finally
-            {
-                Console.ReadKey(true);
-            }
         }
     }
 }

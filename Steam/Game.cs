@@ -43,11 +43,11 @@ namespace Steam
 
         public override string ToString()
         {
-            return string.Join(ConfigurationManager.AppSettings["CsvSeparator"], new object[] { Id, Name, Type, Price, Metacritic, Recommendations, Year, Playtime, AchievCount, AchievDone, Icon, Logo });
+            return string.Join(',', new object[] { Id, Name, Type, Price, Metacritic, Recommendations, Year, Playtime, AchievCount, AchievDone, Icon, Logo });
         }
 
         static readonly string[] CsvHeaderValues = { "Id", "Name", "Type", "Price", "Metacritic", "Recommendations", "Year", "Playtime", "AchievCount", "AchievDone", "Icon", "Logo" };
-        internal static string CsvHeader { get { return string.Join(ConfigurationManager.AppSettings["CsvSeparator"], CsvHeaderValues); } }
+        internal static string CsvHeader { get { return string.Join(',', CsvHeaderValues); } }
         internal static int CsvHeaderLength { get { return CsvHeaderValues.Length; } }
     }
 }
