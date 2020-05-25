@@ -1,7 +1,6 @@
 ﻿using Steam.Model;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -117,8 +116,7 @@ namespace Steam
             if (string.IsNullOrWhiteSpace(s))
                 return null;
 
-            int i = 0;
-            int.TryParse(s, out i);
+            int.TryParse(s, out int i);
             return i;
         }
 
@@ -165,11 +163,11 @@ namespace Steam
                 percentn += percent;
                 count++;
             }
-            percent0 = percent0 / count;
-            percent1 = percent1 / count;
-            percent2 = percent2 / count;
-            percent3 = percent3 / count;
-            percentn = percentn / count;
+            percent0 /= count;
+            percent1 /= count;
+            percent2 /= count;
+            percent3 /= count;
+            percentn /= count;
 
             Console.WriteLine("{0} achievements for {1} games, average % {2}", achievements, count, percentn);
             Console.WriteLine("Average % when rounded to 0 digits: {0}", percent0);
