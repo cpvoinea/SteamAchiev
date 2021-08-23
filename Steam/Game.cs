@@ -1,6 +1,4 @@
-﻿using System.Configuration;
-
-namespace Steam
+﻿namespace Steam
 {
     class Game
     {
@@ -14,6 +12,7 @@ namespace Steam
         internal int? Playtime { get; private set; }
         internal int? AchievCount { get; private set; }
         internal int? AchievDone { get; private set; }
+        internal int AchievPercent => AchievDone > 0 && AchievCount > 0 ? AchievDone.Value * 100 / AchievCount.Value : 0;
         internal string Icon { get; private set; }
         internal string Logo { get; private set; }
 
@@ -43,11 +42,11 @@ namespace Steam
 
         public override string ToString()
         {
-            return string.Join(',', new object[] { Id, Name, Type, Price, Metacritic, Recommendations, Year, Playtime, AchievCount, AchievDone, Icon, Logo });
+            return string.Join(',', new object[] { Id, Name, Type, Price, Metacritic, Recommendations, Year, Playtime, AchievCount, AchievDone, AchievPercent, Icon, Logo });
         }
 
-        static readonly string[] CsvHeaderValues = { "Id", "Name", "Type", "Price", "Metacritic", "Recommendations", "Year", "Playtime", "AchievCount", "AchievDone", "Icon", "Logo" };
-        internal static string CsvHeader { get { return string.Join(',', CsvHeaderValues); } }
-        internal static int CsvHeaderLength { get { return CsvHeaderValues.Length; } }
+        static readonly string[] CsvHeaderValues = { "Id", "Name", "Type", "Price", "Metacritic", "Recommendations", "Year", "Playtime", "AchievCount", "AchievDone", "AchievPercent", "Icon", "Logo" };
+        internal static string CsvHeader => string.Join(',', CsvHeaderValues);
+        internal static int CsvHeaderLength => CsvHeaderValues.Length;
     }
 }

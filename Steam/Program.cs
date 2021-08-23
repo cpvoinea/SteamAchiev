@@ -136,7 +136,7 @@ namespace Steam
                         name += ", " + vals[i];
                     name = name.Trim('"');
 
-                    var g = new Game(vals[0].ToInt().Value, name, vals[l - 5].ToInt().Value, vals[l - 2], vals[l - 1]);
+                    var g = new Game(vals[0].ToInt().Value, $"\"{name}\"", vals[l - 5].ToInt().Value, vals[l - 2], vals[l - 1]);
                     g.SetAchiev(vals[l - 4].ToInt(), vals[l - 3].ToInt());
                     g.SetDetails(vals[l - 10], vals[l - 9].ToInt(), vals[l - 8].ToInt(), vals[l - 7].ToInt(), vals[l - 6]);
 
@@ -150,30 +150,18 @@ namespace Steam
         static void PrintAchiementsPercent(List<Game> games)
         {
             int achievements = 0;
-            double percent0 = 0, percent1 = 0, percent2 = 0, percent3 = 0, percentn = 0;
+            double steamPercent = 0;
             int count = 0;
             foreach (var g in games.Where(x => x.AchievDone > 0))
             {
                 achievements += g.AchievDone.Value;
                 double percent = g.AchievDone.Value * 100.0 / g.AchievCount.Value;
-                percent0 += Math.Round(percent, 0);
-                percent1 += Math.Round(percent, 1);
-                percent2 += Math.Round(percent, 2);
-                percent3 += Math.Round(percent, 3);
-                percentn += percent;
+                steamPercent += Math.Floor(percent);
                 count++;
             }
-            percent0 /= count;
-            percent1 /= count;
-            percent2 /= count;
-            percent3 /= count;
-            percentn /= count;
+            steamPercent /= count;
 
-            Console.WriteLine("{0} achievements for {1} games, average % {2}", achievements, count, percentn);
-            Console.WriteLine("Average % when rounded to 0 digits: {0}", percent0);
-            Console.WriteLine("Average % when rounded to 1 digits: {0}", percent1);
-            Console.WriteLine("Average % when rounded to 2 digits: {0}", percent2);
-            Console.WriteLine("Average % when rounded to 3 digits: {0}", percent3);
+            Console.WriteLine($"{achievements} achievements for {count} games, average % {steamPercent}");
         }
     }
 }
