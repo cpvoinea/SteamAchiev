@@ -10,9 +10,9 @@ namespace Steam
 {
     static class ApiRequest
     {
-        const string GetOwnedGamesFormat = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={0}&steamid={1}&format=json&include_appinfo=1&include_played_free_games=1";
-        const string GetPlayerAchievementsFormat = "http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?key={0}&steamid={1}&appid={2}";
-        const string ResolveVanityUrlFormat = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key={0}&vanityurl={1}";
+        const string GetOwnedGamesFormat = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key={0}&steamid={1}&format=json&include_appinfo=1&include_played_free_games=1";
+        const string GetPlayerAchievementsFormat = "http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key={0}&steamid={1}&appid={2}";
+        const string ResolveVanityUrlFormat = "http://api.steampowered.com/ISteamUser/ResolveVanityURL/v1/?key={0}&vanityurl={1}";
         const string AppDetailsFormat = "http://store.steampowered.com/api/appdetails?appids={0}&cc=ro";
 
         static string SteamKey { get { return "3D093A3884CF5458408AC3A504965900"; } }
@@ -37,7 +37,8 @@ namespace Steam
         {
             if (id.All(char.IsDigit))
                 return id;
-            var vanity = JsonConvert.DeserializeObject<VanityUrl>(Execute(string.Format(ResolveVanityUrlFormat, SteamKey, id)));
+            var json = Execute(string.Format(ResolveVanityUrlFormat, SteamKey, id));
+            var vanity = JsonConvert.DeserializeObject<VanityUrl>(json);
             if (vanity.response.success == 1)
                 return vanity.response.steamid;
             throw new ApplicationException("Unknown user " + id);
@@ -45,12 +46,14 @@ namespace Steam
 
         internal static OwnedGames GetOwnedGames(string steamId)
         {
-            return JsonConvert.DeserializeObject<OwnedGames>(Execute(string.Format(GetOwnedGamesFormat, SteamKey, steamId)));
+            var games = Execute(string.Format(GetOwnedGamesFormat, SteamKey, steamId));
+            return JsonConvert.DeserializeObject<OwnedGames>(games);
         }
 
         internal static PlayerAchievements GetPlayerAchievements(string steamId, int appId)
         {
-            return JsonConvert.DeserializeObject<PlayerAchievements>(Execute(string.Format(GetPlayerAchievementsFormat, SteamKey, steamId, appId)));
+            var achievements = Execute(string.Format(GetPlayerAchievementsFormat, SteamKey, steamId, appId));
+            return JsonConvert.DeserializeObject<PlayerAchievements>(achievements);
         }
 
         internal static AppDetails GetAppDetails(int appId)
@@ -62,7 +65,17 @@ namespace Steam
             json = json.Substring(i);
             json = json.Substring(0, json.Length - 2);
 
-            return JsonConvert.DeserializeObject<AppDetails>(json);
+            var details = JsonConvert.DeserializeObject<AppDetails>(json);
+            return details;
+        }
+
+        internal static int? ToInt(this string s)
+        {
+            if (string.IsNullOrWhiteSpace(s))
+                return null;
+
+            int.TryParse(s, out int i);
+            return i;
         }
     }
 }
