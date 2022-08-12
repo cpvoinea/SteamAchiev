@@ -70,6 +70,7 @@ namespace Steam
         {
             int achievements = 0;
             double steamPercent = 0;
+            int steamPercentRounded = 0;
             int count = 0;
             int perfect = 0;
             var withAch = games.Where(x => x.AchievDone > 0);
@@ -77,7 +78,8 @@ namespace Steam
             {
                 achievements += g.AchievDone.Value;
                 double percent = g.AchievDone.Value * 100.0 / g.AchievCount.Value;
-                steamPercent += Math.Floor(percent);
+                steamPercent += percent;
+                steamPercentRounded += (int)Math.Floor(percent);
                 count++;
                 if (g.AchievCount == g.AchievDone)
                     perfect++;
@@ -85,7 +87,15 @@ namespace Steam
 
             Console.WriteLine();
             Console.WriteLine($"Games {games.Count}, {games.Count(g => !g.AchievError)} with stats, {count} in progress, {perfect} perfect");
-            Console.WriteLine($"Achievements {achievements}, total % {steamPercent}, average % {steamPercent / count}");
+            Console.WriteLine($"Achievements {achievements}, total % {steamPercent} rounded {steamPercentRounded}, average % {steamPercent / count}");
+            // corrections
+            count += 2;
+            achievements += 69;
+            steamPercent += 6900.0 / 123;
+            steamPercentRounded += 6900 / 123;
+            Console.WriteLine("With corrections:");
+            Console.WriteLine($"Games {games.Count}, {games.Count(g => !g.AchievError)} with stats, {count} in progress, {perfect} perfect");
+            Console.WriteLine($"Achievements {achievements}, total % {steamPercent} rounded {steamPercentRounded}, average % {steamPercent / count}");
         }
 
         /*
